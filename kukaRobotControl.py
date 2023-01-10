@@ -96,8 +96,7 @@ class RobotControl:
             # self.setMovement(5, 0, 0)
             self.sim.setJointTargetVelocity(self.joint_1, 0.01)
             self.client.step()
-        ##
-        #
+
 
         self.stopSimulation()
         print('Program ended')
