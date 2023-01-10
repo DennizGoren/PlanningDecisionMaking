@@ -19,6 +19,12 @@ class RobotControl:
         self.idle_fps = self.sim.getInt32Param(self.sim.intparam_idle_fps)
         self.robot_object = self.sim.getObject("/youBot")
         self.world_frame = self.sim.handle_world
+        # self.get_circle_obstacles =
+
+        # get all racks from Coppeliasim scene
+        self.racks = []
+        for i in range(27):
+            self.racks.append(self.sim.getObject(f'/rack[{i}]'))
 
         # initialize wheel joints
         self.front_left_wheel_joint = self.sim.getObject('./rollingJoint_fl')
@@ -34,6 +40,17 @@ class RobotControl:
         self.joint_4 = self.sim.getObject('./youBotArmJoint4')
         self.gripper_joint_1 = self.sim.getObject('./youBotGripperJoint1')
         self.gripper_joint_2 = self.sim.getObject('./youBotGripperJoint2')
+
+    def get_circle_obstacles(self):
+        obstacle_list = []
+        radius = 0.16711
+        for rack in self.racks:
+            x_rack, y_rack, _ = self.getObjectPosition(rack)
+            y_start = y_rack + 1.055
+            for i in range(11):
+                obstacle = (x_rack, (y_start - 0.211*i), radius)
+                obstacle_list.append(obstacle)
+        return obstacle_list
 
     def setMovement(self, yvel, xvel, yawrate):
         self.sim.setJointTargetVelocity(self.front_left_wheel_joint, -yvel - xvel - yawrate)
@@ -71,9 +88,6 @@ class RobotControl:
         # When simulation is not running, ZMQ message handling could be a bit
         # slow, since the idle loop runs at 8 Hz by default. So let's make
         # sure that the idle loop runs at full speed for this program:
-        #
-        #
-        #
         self.sim.setInt32Param(self.sim.intparam_idle_fps, 0)
         return self.sim.startSimulation()
 
@@ -92,10 +106,10 @@ class RobotControl:
         # print(self.sim.getJointPosition(self.join_1))
         # self.sim.setJointPosition(self.joint_1, 0)
         # time.sleep(5)
-        while (t := self.sim.getSimulationTime()) < 15:
-            # self.setMovement(5, 0, 0)
-            self.sim.setJointTargetVelocity(self.joint_1, 0.01)
-            self.client.step()
+        # while (t := self.sim.getSimulationTime()) < 15:
+        #     # self.setMovement(5, 0, 0)
+        #     self.sim.setJointTargetVelocity(self.joint_1, 0.01)
+        #     self.client.step()
 
 
         self.stopSimulation()
