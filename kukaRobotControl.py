@@ -9,7 +9,8 @@ from zmqRemoteApi import RemoteAPIClient
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-
+from rrt import RRT
+from pid_controller import PID
 
 class RobotControl:
     def __init__(self):
@@ -117,5 +118,29 @@ class RobotControl:
         print('Program ended')
 
 if __name__ == '__main__':
+    # ====Search Path with RRT====
+    obstacleList = [(5, 5, 1), (3, 6, 2), (3, 8, 2), (3, 10, 2), (7, 5, 2), #These should be filled with the obstacle in our sim
+                    (9, 5, 2), (8, 10, 1)]  # [x, y, radius]
+    # Set Initial parameters
+    rrt = RRT(
+        start=[0, 0],
+        goal=[gx, gy],
+        rand_area=[-2, 15],
+        obstacle_list=obstacleList,
+        # play_area=[0, 10, 0, 14]
+        robot_radius=0.8
+    )
+    path = rrt.planning(animation=show_animation) #this path is the reference trajectory for the PID
+    if path is None:
+        print("Cannot find path")
+    else:
+        print("found path!!")
+
+    pid = PID(path)
+    pid.control()
+    robot_velocities = pid.velocity_path #array of vel inputs for robot
+    robot_steering = pid.steering_path #array of steering inputs for robot
+
+
     control = RobotControl()
     control.run()
