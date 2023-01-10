@@ -10,6 +10,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from rrt import RRT
+from pid_controller import PID
 
 class RobotControl:
     def __init__(self):
@@ -120,8 +121,10 @@ if __name__ == '__main__':
     else:
         print("found path!!")
 
-    #Here there should be the PID loop with the robot control in it
-
+    pid = PID(path)
+    pid.control()
+    robot_velocities = pid.velocity_path #array of vel inputs for robot
+    robot_steering = pid.steering_path #array of steering inputs for robot
 
 
     control = RobotControl()
