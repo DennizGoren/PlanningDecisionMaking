@@ -200,7 +200,7 @@ class RRT:
         plt.plot(self.start.x, self.start.y, "xr")
         plt.plot(self.end.x, self.end.y, "xr")
         plt.axis("equal")
-        plt.axis([0, 25, 0, 25])
+        plt.axis([-5, 25, -5, 25])
         plt.grid(True)
         plt.pause(0.0001)
 

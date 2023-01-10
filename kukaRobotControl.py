@@ -1,19 +1,17 @@
-# Make sure to have the add-on "ZMQ remote API"
-# running in CoppeliaSim
-# All CoppeliaSim commands will run in blocking mode (block
-# until a reply from CoppeliaSim is received). For a non-
-# blocking example, see simpleTest-nonBlocking.py
-
 import time
 from zmqRemoteApi import RemoteAPIClient
 import numpy as np
 import math
 import matplotlib.pyplot as plt
 from RRT import RRT
+from RRTStar import RRTStar
 from pid_controller import PID
 
 class RobotControl:
     def __init__(self):
+        self.start = [3, 11]
+        self.goal = [17, 4]
+        self.robot_radius = 0.8
         self.client = RemoteAPIClient()
         self.client.setStepping(True)
         self.sim = self.client.getObject('sim')
@@ -57,6 +55,38 @@ class RobotControl:
                 obstacle = (x_rack, (y_start - 0.211*i), radius)
                 obstacle_list.append(obstacle)
         return obstacle_list
+
+    def rrt_path(self, RRT_star=True):
+        if RRT_star:
+            algo = RRTStar(
+                start=self.start,
+                goal=self.goal,
+                rand_area=[0, 15],
+                obstacle_list=self.get_circle_obstacles(),
+                expand_dis=10,
+                robot_radius=self.robot_radius)
+
+        else:
+            algo = RRT(
+                start=self.start,
+                goal=self.goal,
+                rand_area=[0, 15],
+                obstacle_list=self.get_circle_obstacles(),
+                play_area=[0, 20, 0, 20],
+                robot_radius=self.robot_radius)
+
+        path = algo.planning(animation=False)  # this path is the reference trajectory for the PID
+        algo.draw_graph()
+        plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
+        plt.grid(True)
+        plt.pause(0.0001)  # Need for Mac
+        plt.show()
+
+        if path is None:
+            print("Cannot find path")
+        else:
+            print("found path!!")
+        return path
 
     def setMovement(self, yvel, xvel, yawrate):
         self.sim.setJointTargetVelocity(self.front_left_wheel_joint, -yvel - xvel - yawrate)
@@ -105,85 +135,23 @@ class RobotControl:
 
     def run(self):
         print('Program started')
-        # obstacles = self.get_circle_obstacles()
-        # fig, ax = plt.subplots()
-        # ax.set_xlim(-20, 20)
-        # ax.set_ylim(-20, 20)
-        # for i in range(len(obstacles)):
-        #     x, y, r = obstacles[i]
-        #
-        #     circle = plt.Circle((x, y), r, color = 'r')
-        #     ax.add_artist(circle)
-        # plt.show()
         #start simulation in CoppeliaSim
         self.startSimulation()
-        rrt = RRT(
-            start=[3, 11],
-            goal=[17, 4],
-            rand_area=[0, 20],
-            obstacle_list=self.get_circle_obstacles(),
-            play_area=[0, 20, 0, 20],
-            robot_radius=0.8
-        )
-        # t = time.time()
-
-        '''Testing RRT on current map'''
-
-        path = rrt.planning(animation=True) #this path is the reference trajectory for the PID
-        rrt.draw_graph()
-        plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
-        plt.grid(True)
-        plt.pause(0.0001)  # Need for Mac
-        plt.show()
-        # time.sleep(10)
-        # plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
-        # plt.grid(True)
-        # # plt.pause(0.01)  # Need for Mac
-        # plt.show()
-        # plt.plot(path)
-        # plt.
-        if path is None:
-            print("Cannot find path")
-        else:
-            print("found path!!")
-        # self.setRobotToStartPosition()
-        # print(self.sim.getJointPosition(self.join_1))
-        # self.sim.setJointPosition(self.joint_1, 0)
-        # time.sleep(5)
+        print(self.rrt_path())
         # while (t := self.sim.getSimulationTime()) < 15:
         #     # self.setMovement(5, 0, 0)
         #     self.sim.setJointTargetVelocity(self.joint_1, 0.01)
         #     self.client.step()
         #
-
-
         self.stopSimulation()
         print('Program ended')
 
 if __name__ == '__main__':
-    # ====Search Path with RRT====
-    # obstacleList = [(5, 5, 1), (3, 6, 2), (3, 8, 2), (3, 10, 2), (7, 5, 2), #These should be filled with the obstacle in our sim
-    #                 (9, 5, 2), (8, 10, 1)]  # [x, y, radius]
-    # # Set Initial parameters
-    # rrt = RRT(
-    #     start=[0, 0],
-    #     goal=[16, -14],
-    #     rand_area=[4, 20],
-    #     obstacle_list=obstacleList,
-    #     # play_area=[0, 10, 0, 14]
-    #     robot_radius=0.8
-    # )
-    # path = rrt.planning(animation=show_animation) #this path is the reference trajectory for the PID
-    # if path is None:
-    #     print("Cannot find path")
-    # else:
-    #     print("found path!!")
 
     # pid = PID(path)
     # pid.control()
     # robot_velocities = pid.velocity_path #array of vel inputs for robot
     # robot_steering = pid.steering_path #array of steering inputs for robot
-
 
     control = RobotControl()
     control.run()
