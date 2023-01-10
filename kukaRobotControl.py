@@ -20,12 +20,17 @@ class RobotControl:
         self.idle_fps = self.sim.getInt32Param(self.sim.intparam_idle_fps)
         self.robot_object = self.sim.getObject("/youBot")
         self.world_frame = self.sim.handle_world
-        # self.get_circle_obstacles =
+        # self.get_circle_obstacles = self.get_circle_obstacles()
 
         # get all racks from Coppeliasim scene
         self.racks = []
-        for i in range(27):
-            self.racks.append(self.sim.getObject(f'/rack[{i}]'))
+        i = 0
+        while True:
+            try:
+                self.racks.append(self.sim.getObject(f'/rack[{i}]'))
+                i += 1
+            except Exception:
+                break
 
         # initialize wheel joints
         self.front_left_wheel_joint = self.sim.getObject('./rollingJoint_fl')
@@ -100,9 +105,47 @@ class RobotControl:
 
     def run(self):
         print('Program started')
-
+        # obstacles = self.get_circle_obstacles()
+        # fig, ax = plt.subplots()
+        # ax.set_xlim(-20, 20)
+        # ax.set_ylim(-20, 20)
+        # for i in range(len(obstacles)):
+        #     x, y, r = obstacles[i]
+        #
+        #     circle = plt.Circle((x, y), r, color = 'r')
+        #     ax.add_artist(circle)
+        # plt.show()
         #start simulation in CoppeliaSim
         self.startSimulation()
+        rrt = RRT(
+            start=[3, 11],
+            goal=[17, 4],
+            rand_area=[0, 20],
+            obstacle_list=self.get_circle_obstacles(),
+            play_area=[0, 20, 0, 20],
+            robot_radius=0.8
+        )
+        # t = time.time()
+
+        '''Testing RRT on current map'''
+
+        path = rrt.planning(animation=True) #this path is the reference trajectory for the PID
+        rrt.draw_graph()
+        plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
+        plt.grid(True)
+        plt.pause(0.0001)  # Need for Mac
+        plt.show()
+        # time.sleep(10)
+        # plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
+        # plt.grid(True)
+        # # plt.pause(0.01)  # Need for Mac
+        # plt.show()
+        # plt.plot(path)
+        # plt.
+        if path is None:
+            print("Cannot find path")
+        else:
+            print("found path!!")
         # self.setRobotToStartPosition()
         # print(self.sim.getJointPosition(self.join_1))
         # self.sim.setJointPosition(self.joint_1, 0)
@@ -124,8 +167,8 @@ if __name__ == '__main__':
     # # Set Initial parameters
     # rrt = RRT(
     #     start=[0, 0],
-    #     goal=[gx, gy],
-    #     rand_area=[-2, 15],
+    #     goal=[16, -14],
+    #     rand_area=[4, 20],
     #     obstacle_list=obstacleList,
     #     # play_area=[0, 10, 0, 14]
     #     robot_radius=0.8

@@ -8,6 +8,7 @@ author: AtsushiSakai(@Atsushi_twi)
 
 import math
 import random
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -199,9 +200,9 @@ class RRT:
         plt.plot(self.start.x, self.start.y, "xr")
         plt.plot(self.end.x, self.end.y, "xr")
         plt.axis("equal")
-        plt.axis([-2, 15, -2, 15])
+        plt.axis([0, 25, 0, 25])
         plt.grid(True)
-        plt.pause(0.01)
+        plt.pause(0.0001)
 
     @staticmethod
     def plot_circle(x, y, size, color="-b"):  # pragma: no cover
@@ -283,7 +284,7 @@ def main(gx=6.0, gy=10.0):
         rrt.draw_graph()
         plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
         plt.grid(True)
-        plt.pause(0.01)  # Need for Mac
+        plt.pause(0.0001)  # Need for Mac
         plt.show()
 
 
