@@ -4,9 +4,11 @@ author: Atsushi Sakai(@Atsushi_twi)
 """
 
 import math
+import random
 import sys
 import matplotlib.pyplot as plt
 import pathlib
+from tqdm import tqdm
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
 
 from RRT import RRT
@@ -58,8 +60,9 @@ class RRTStar(RRT):
         """
 
         self.node_list = [self.start]
-        for i in range(self.max_iter):
-            # print("Iter:", i, ", number of nodes:", len(self.node_list))
+
+        for i in tqdm(range(self.max_iter)):
+            
             rnd = self.get_random_node()
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
             new_node = self.steer(self.node_list[nearest_ind], rnd,
@@ -235,70 +238,70 @@ class RRTStar(RRT):
                 node.cost = self.calc_new_cost(parent_node, node)
                 self.propagate_cost_to_leaves(node)
 
-    # def get_path_length(path):
-    #     le = 0
-    #     for i in range(len(path) - 1):
-    #         dx = path[i + 1][0] - path[i][0]
-    #         dy = path[i + 1][1] - path[i][1]
-    #         d = math.sqrt(dx * dx + dy * dy)
-    #         le += d
+    def get_path_length(self, path):
+        le = 0
+        for i in range(len(path) - 1):
+            dx = path[i + 1][0] - path[i][0]
+            dy = path[i + 1][1] - path[i][1]
+            d = math.sqrt(dx * dx + dy * dy)
+            le += d
 
-    #     return le
+        return le
     
-    # def get_target_point(path, targetL):
-    #     le = 0
-    #     ti = 0
-    #     lastPairLen = 0
-    #     for i in range(len(path) - 1):
-    #         dx = path[i + 1][0] - path[i][0]
-    #         dy = path[i + 1][1] - path[i][1]
-    #         d = math.sqrt(dx * dx + dy * dy)
-    #         le += d
-    #         if le >= targetL:
-    #             ti = i - 1
-    #             lastPairLen = d
-    #             break
+    def get_target_point(self, path, targetL):
+        le = 0
+        ti = 0
+        lastPairLen = 0
+        for i in range(len(path) - 1):
+            dx = path[i + 1][0] - path[i][0]
+            dy = path[i + 1][1] - path[i][1]
+            d = math.sqrt(dx * dx + dy * dy)
+            le += d
+            if le >= targetL:
+                ti = i - 1
+                lastPairLen = d
+                break
 
-    #     partRatio = (le - targetL) / lastPairLen
+        partRatio = (le - targetL) / lastPairLen
 
-    #     x = path[ti][0] + (path[ti + 1][0] - path[ti][0]) * partRatio
-    #     y = path[ti][1] + (path[ti + 1][1] - path[ti][1]) * partRatio
+        x = path[ti][0] + (path[ti + 1][0] - path[ti][0]) * partRatio
+        y = path[ti][1] + (path[ti + 1][1] - path[ti][1]) * partRatio
 
-    #     return [x, y, ti]
+        return [x, y, ti]
 
-    # def path_smoothing(path, max_iter, obstacle_list):
-    #     le = get_path_length(path)
+    def path_smoothing(self, path, max_iter, obstacle_list):
+        le = self.get_path_length(path)
 
-    #     for i in range(max_iter):
-    #         # Sample two points
-    #         pickPoints = [random.uniform(0, le), random.uniform(0, le)]
-    #         pickPoints.sort()
-    #         first = get_target_point(path, pickPoints[0])
-    #         second = get_target_point(path, pickPoints[1])
+        for i in range(max_iter):
+            # Sample two points
+            pickPoints = [random.uniform(0, le), random.uniform(0, le)]
+            pickPoints.sort()
+            first = self.get_target_point(path, pickPoints[0])
+            second = self.get_target_point(path, pickPoints[1])
 
-    #         if first[2] <= 0 or second[2] <= 0:
-    #             continue
+            if first[2] <= 0 or second[2] <= 0:
+                continue
 
-    #         if (second[2] + 1) > len(path):
-    #             continue
+            if (second[2] + 1) > len(path):
+                continue
 
-    #         if second[2] == first[2]:
-    #             continue
+            if second[2] == first[2]:
+                continue
 
-    #         # collision check
-    #         if not line_collision_check(first, second, obstacle_list):
-    #             continue
+            # collision check
+            if not self.line_collision_check(first, second, obstacle_list):
+                continue
 
-    #         # Create New path
-    #         newPath = []
-    #         newPath.extend(path[:first[2] + 1])
-    #         newPath.append([first[0], first[1]])
-    #         newPath.append([second[0], second[1]])
-    #         newPath.extend(path[second[2] + 1:])
-    #         path = newPath
-    #         le = get_path_length(path)
+            # Create New path
+            newPath = []
+            newPath.extend(path[:first[2] + 1])
+            newPath.append([first[0], first[1]])
+            newPath.append([second[0], second[1]])
+            newPath.extend(path[second[2] + 1:])
+            path = newPath
+            le = self.get_path_length(path)
 
-        # return path
+        return path
 
 
 def main():
