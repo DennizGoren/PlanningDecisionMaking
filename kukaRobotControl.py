@@ -8,6 +8,7 @@ from RRTStar import RRTStar
 from pid_controller import PID
 import time
 from tqdm import tqdm
+from scipy import interpolate
 
 class RobotControl:
     def __init__(self):
@@ -83,7 +84,7 @@ class RobotControl:
         toc = time.perf_counter()
         print(f"Downloaded the tutorial in {toc - tic:0.4f} seconds")
 
-        
+        print(path)
         
 
         if path is None:
@@ -97,6 +98,16 @@ class RobotControl:
             plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
             plt.plot([x for (x, y) in smoothedPath], [y for (x, y) in smoothedPath], '-c')
             plt.grid(True)
+    
+            numpy_path = np.asarray(path, dtype=np.float32)
+            x, y = zip(*numpy_path)
+            x = np.r_[x, x[0]]
+            y = np.r_[y, y[0]]
+            f, u = interpolate.splprep([x, y], s=0, per=True)
+            #create interpolated lists of points
+            xint, yint = interpolate.splev(np.linspace(0, 1, 100), f)
+            plt.scatter(x, y)
+            plt.plot(xint, yint)
             plt.pause(0.0001)  # Need for Mac
             plt.show()
         
