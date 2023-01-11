@@ -268,6 +268,29 @@ class RRTStar(RRT):
         y = path[ti][1] + (path[ti + 1][1] - path[ti][1]) * partRatio
 
         return [x, y, ti]
+    
+    def line_collision_check(self, first, second, obstacleList):
+        # Line Equation
+
+        x1 = first[0]
+        y1 = first[1]
+        x2 = second[0]
+        y2 = second[1]
+
+        try:
+            a = y2 - y1
+            b = -(x2 - x1)
+            c = y2 * (x2 - x1) - x2 * (y2 - y1)
+        except ZeroDivisionError:
+            return False
+
+        for (ox, oy, size) in obstacleList:
+            d = abs(a * ox + b * oy + c) / (math.sqrt(a * a + b * b))
+            if d <= size:
+                return False
+
+        return True  # OK
+
 
     def path_smoothing(self, path, max_iter, obstacle_list):
         le = self.get_path_length(path)

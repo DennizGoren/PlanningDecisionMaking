@@ -63,7 +63,7 @@ class RobotControl:
             algo = RRTStar(
                 start=self.start,
                 goal=self.goal,
-                max_iter=300,
+                max_iter=600,
                 rand_area=[0, 20],
                 obstacle_list=self.get_circle_obstacles(),
                 expand_dis=1,
@@ -80,7 +80,6 @@ class RobotControl:
                 robot_radius=self.robot_radius)
         tic = time.perf_counter()
         path = algo.planning(animation=False) # this path is the reference trajectory for the PID
-        print(path)
         toc = time.perf_counter()
         print(f"Downloaded the tutorial in {toc - tic:0.4f} seconds")
 
@@ -92,7 +91,7 @@ class RobotControl:
         else:
             print("found path!!")
             # Path smoothing
-            maxIter = 1000
+            maxIter = 2000
             smoothedPath = algo.path_smoothing(path, maxIter, self.get_circle_obstacles())
             algo.draw_graph()
             plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
