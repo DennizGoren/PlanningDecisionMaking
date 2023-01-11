@@ -62,7 +62,7 @@ class RobotControl:
             algo = RRTStar(
                 start=self.start,
                 goal=self.goal,
-                max_iter=300,
+                max_iter=10000,
                 rand_area=[0, 15],
                 obstacle_list=self.get_circle_obstacles(),
                 expand_dis=10,
@@ -81,7 +81,7 @@ class RobotControl:
         path = algo.planning(animation=False)  # this path is the reference trajectory for the PID
         toc = time.perf_counter()
         print(f"Downloaded the tutorial in {toc - tic:0.4f} seconds")
-        
+
         algo.draw_graph()
         plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
         plt.grid(True)
