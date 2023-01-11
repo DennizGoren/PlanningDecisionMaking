@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 
 class PID:
     def __init__(self,path):
-        self.current_pos = (0, 0, 0, 0)  # (x, y, theta, v)
-        self.path = path  # Global path with nodes as a list of tuples
+        self.path = path  # Global path with nodes in array
+        self.current_pos = [path[0,0], path[0,1], 0, 0]  # (x, y, theta, v)
         self.time_to_complete = 5.0  # Desired time to complete the global path in seconds
         self.time_passed = 0.0
 
@@ -55,7 +55,7 @@ class PID:
     
     # Calculate the control output for the linear velocity using a PID controller
         distance_to_goal = math.sqrt((goal_pos[0] - current_pos[0])**2 + (goal_pos[1] - current_pos[1])**2)
-        desired_velocity = distance_to_goal / time_to_complete
+        desired_velocity = distance_to_goal / (time_to_complete+0.01)
         velocity_error = desired_velocity - current_pos[3]
     
         Kp = 0.5
@@ -83,15 +83,15 @@ class PID:
         vel = []
         time = []
 
-        for goal_pos in self.path:
+        for goal_pos in self.path: 
         #in order: integral error, previous error
             steering_pid = [0,0]
             velocity_pid = [0,0]
-            node_length = math.sqrt((goal_pos[0] - self.current_pos[0])**2 + (goal_pos[1] - self.current_pos[1])**2)
+            node_length = math.sqrt((goal_pos[0] - self.current_pos[0])**2 + (goal_pos[1] - self.current_pos[1])**2)+0.000001 #add small term to make it robust to zero division
             while True:
                 remaining_length = math.sqrt((goal_pos[0] - self.current_pos[0])**2 + (goal_pos[1] - self.current_pos[1])**2)
                 time_to_complete_remaining = self.time_to_complete*remaining_length/node_length
-                dt = 0.1
+                dt = 0.05
         
                 self.time_passed += dt
                 steering, velocity, steering_pid,velocity_pid = self.unicycle_controller(self.current_pos, goal_pos, time_to_complete_remaining,dt,steering_pid,velocity_pid)

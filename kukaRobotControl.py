@@ -170,15 +170,20 @@ class RobotControl:
         #     self.sim.setJointTargetVelocity(self.joint_1, 0.01)
         #     self.client.step()
         #
+        # for i in range(len(robot_velocities)):
+        #     self.setMovement(robot_velocities[i]*100, 0, robot_steering[i])
+        #     self.client.step()
+        
         self.stopSimulation()
         print('Program ended')
 
 if __name__ == '__main__':
 
-    # pid = PID(path)
+    control = RobotControl()
+    # path = control.rrt_path(RRT_star=True)
+    # pid = PID(np.array(path))
     # pid.control()
     # robot_velocities = pid.velocity_path #array of vel inputs for robot
     # robot_steering = pid.steering_path #array of steering inputs for robot
-
-    control = RobotControl()
+    #control.run(robot_velocities,robot_steering)
     control.run()
