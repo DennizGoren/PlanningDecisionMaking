@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from RRT import RRT
 from RRTStar import RRTStar
 from pid_controller import PID
+import time
 
 class RobotControl:
     def __init__(self):
@@ -61,9 +62,11 @@ class RobotControl:
             algo = RRTStar(
                 start=self.start,
                 goal=self.goal,
+                max_iter=300,
                 rand_area=[0, 15],
                 obstacle_list=self.get_circle_obstacles(),
                 expand_dis=10,
+                search_until_max_iter= True,
                 robot_radius=self.robot_radius)
 
         else:
@@ -74,8 +77,11 @@ class RobotControl:
                 obstacle_list=self.get_circle_obstacles(),
                 play_area=[0, 20, 0, 20],
                 robot_radius=self.robot_radius)
-
+        tic = time.perf_counter()
         path = algo.planning(animation=False)  # this path is the reference trajectory for the PID
+        toc = time.perf_counter()
+        print(f"Downloaded the tutorial in {toc - tic:0.4f} seconds")
+        
         algo.draw_graph()
         plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
         plt.grid(True)
