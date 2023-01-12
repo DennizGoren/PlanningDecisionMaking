@@ -43,9 +43,10 @@ class RobotControl:
         for i, rack in enumerate(self.racks):
             x_rack, y_rack, _ = self.getObjectPosition(rack)
             theta = self.getObjectOrientation(rack)[2]
-            y_start = y_rack + 1.055
+            y_start = y_rack + 1.055 * np.cos(theta)
+            x_start = x_rack + 1.055 * np.sin(theta)
             for i in range(11):
-                obstacle = (x_rack, (y_start - 0.211 * i), radius)
+                obstacle = (x_rack - 0.211 * np.sin(theta) * i, (y_start - 0.211 * np.cos(theta) * i), radius)
                 obstacle_list.append(obstacle)
         return obstacle_list
 
@@ -54,11 +55,11 @@ class RobotControl:
             algo = RRTStar(
                 start=self.start,
                 goal=self.goal,
-                max_iter=1000,
+                max_iter=600,
                 rand_area=[-10, 20],
                 obstacle_list=self.get_circle_obstacles(),
                 expand_dis=3,
-                search_until_max_iter=True,
+                search_until_max_iter=False,
                 robot_radius=self.robot_radius)
 
         else:
@@ -70,7 +71,7 @@ class RobotControl:
                 play_area=[0, 20, 0, 20],
                 robot_radius=self.robot_radius)
         tic = time.perf_counter()
-        path = algo.planning(animation=True)  # this path is the reference trajectory for the PID
+        path = algo.planning(animation=False)  # this path is the reference trajectory for the PID
         toc = time.perf_counter()
         print(f"Downloaded the tutorial in {toc - tic:0.4f} seconds")
 
