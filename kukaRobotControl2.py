@@ -177,9 +177,14 @@ class RobotControl:
             path = np.array(pickle.load(f))[::-1]
 
         for desired_pos in path:
+            print("desired positions: ", desired_pos)
+
+        for desired_pos in path:
+
+            print("desired pos: ", desired_pos)
             remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + (
                         desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
-            threshold = 0.01
+            threshold = 0.2
 
             # pid starting values
             dt = 0.05
@@ -190,21 +195,29 @@ class RobotControl:
             prev_error_vel = 0
             heading_error_list = []
             t = 0
+
+            for i in range(20):
+                print("heading:", self.getObjectOrientation(self.robot_object)[2])
+            
+
             while remaining_length > threshold:
                 remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + (
                             desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
-                current_heading = self.getObjectOrientation(self.robot_object)[1]
+                current_heading = self.getObjectOrientation(self.robot_object)[2]
+                print("headings: ",self.getObjectOrientation(self.robot_object))
+                print("current: ", current_heading)
                 current_pos = np.array(self.getObjectPosition(self.robot_object))[:2]
 
                 desired_heading = math.atan2(desired_pos[1] - current_pos[1], desired_pos[0] - current_pos[0])
+                print("desired heading: ",desired_heading)
                 heading_error = desired_heading - current_heading
 
                 # print(f'current_heading is {current_heading}, heading error is {heading_error}')
 
                 # Calculate the control output for the steering angle using a PID controller
-                Kp = 1
+                Kp = 0.1
                 Ki = 0
-                Kd = 0.01
+                Kd = 0.001
                 
                 I_steer += heading_error * dt
                 steering_derivative = (heading_error - prev_error_steer) / dt
@@ -214,19 +227,24 @@ class RobotControl:
                 print(f"heading error:{heading_error}")
 
                 # Calculate the control output for the velocity using a PID controller
-                Kp = 0.0001
-                Ki = 0
+                Kp = 0.4
+                Ki = 0.1
                 Kd = 0.001
             
                 I_vel += remaining_length * dt
                 velocity_derivative = (remaining_length - prev_error_vel) / dt
                 velocity = Kp * remaining_length + Ki * I_vel + Kd * velocity_derivative
                 prev_error_vel = remaining_length
-
-                if np.abs(heading_error) > np.pi / 32:
+                print("heading error is: ", heading_error)
+                if np.abs(heading_error) > np.pi / 16:
                     velocity = 0
+                    if remaining_length < threshold:
+                        break
+                
+                print("velocity is: ", velocity ,"steering is: ",steering)
 
-                #print("velocity is:", velocity ,"steering is ",steering)
+                print("desired position = ",desired_pos)
+                print("remaining lenght = ",remaining_length)
                 self.setMovement(velocity,steering)
                 self.client.step()
 
@@ -236,5 +254,5 @@ class RobotControl:
 
 if __name__ == '__main__':
     control = RobotControl()
-    control.savePath() #uncomment if you want to search for a new path
+    # control.savePath() #uncomment if you want to search for a new path
     control.run()
