@@ -46,7 +46,7 @@ class RobotControl:
             y_start = y_rack + 1.055 * np.cos(theta)
             x_start = x_rack + 1.055 * np.sin(theta)
             for i in range(11):
-                obstacle = (x_rack - 0.211 * np.sin(theta) * i, (y_start - 0.211 * np.cos(theta) * i), radius)
+                obstacle = (x_rack + 0.211 * np.sin(theta) * i, (y_start - 0.211 * np.cos(theta) * i), radius)
                 obstacle_list.append(obstacle)
         return obstacle_list
 
