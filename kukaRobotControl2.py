@@ -57,7 +57,7 @@ class RobotControl:
             y_start = y_rack + 1.055 * np.cos(theta)
             x_start = x_rack + 1.055 * np.sin(theta)
             for i in range(11):
-                obstacle = (x_rack + 0.211 * np.sin(theta) * i, (y_start - 0.211 * np.cos(theta) * i), radius)
+                obstacle = (x_start - 0.211 * np.sin(theta) * i, (y_start - 0.211 * np.cos(theta) * i), radius)
                 obstacle_list.append(obstacle)
         return obstacle_list
 
@@ -174,7 +174,7 @@ class RobotControl:
         self.startSimulation()
 
         with open('foundPath.pkl', 'rb') as f:
-            path = pickle.load(f)
+            path = np.array(pickle.load(f))[::-1]
 
         for desired_pos in path:
             remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + (
