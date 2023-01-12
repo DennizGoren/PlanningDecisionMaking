@@ -16,20 +16,23 @@ from pid_controller import PID
 import time
 from tqdm import tqdm
 from scipy import interpolate
-import pickle 
+import pickle
 
 
 class RobotControl:
     def __init__(self):
-        self.start = [0, 0]
-        self.goal = [15, 11]
         self.robot_radius = 0.8
         self.client = RemoteAPIClient()
         self.client.setStepping(True)
         self.sim = self.client.getObject('sim')
         self.idle_fps = self.sim.getInt32Param(self.sim.intparam_idle_fps)
         self.robot_object = self.sim.getObject("/LineTracer")
+        self.goal_object = self.sim.getObject("/indoorPlant")
         self.world_frame = self.sim.handle_world
+        start_pos = self.getObjectPosition(self.robot_object)
+        self.start = [start_pos[0], start_pos[1]]
+        goal_pos = self.getObjectPosition(self.goal_object)
+        self.goal = [goal_pos[0], goal_pos[1]]
 
         # get all racks from Coppeliasim scene
         self.racks = []
@@ -51,9 +54,10 @@ class RobotControl:
         for i, rack in enumerate(self.racks):
             x_rack, y_rack, _ = self.getObjectPosition(rack)
             theta = self.getObjectOrientation(rack)[2]
-            y_start = y_rack + 1.055
+            y_start = y_rack + 1.055 * np.cos(theta)
+            x_start = x_rack + 1.055 * np.sin(theta)
             for i in range(11):
-                obstacle = (x_rack, (y_start - 0.211 * i), radius)
+                obstacle = (x_rack + 0.211 * np.sin(theta) * i, (y_start - 0.211 * np.cos(theta) * i), radius)
                 obstacle_list.append(obstacle)
         return obstacle_list
 
@@ -62,7 +66,7 @@ class RobotControl:
             algo = RRTStar(
                 start=self.start,
                 goal=self.goal,
-                max_iter=300,
+                max_iter=600,
                 rand_area=[-10, 20],
                 obstacle_list=self.get_circle_obstacles(),
                 expand_dis=7,
@@ -115,14 +119,14 @@ class RobotControl:
         R = 0.027 * robot_scaling_factor
         h = 0.119 * robot_scaling_factor
         self.sim.setJointTargetVelocity(self.right_wheel_joint, ((velocity + yawrate * (h / 2)) / R))
-        self.sim.setJointTargetVelocity(self.left_wheel_joint,  ((velocity - yawrate * (h / 2)) / R))
+        self.sim.setJointTargetVelocity(self.left_wheel_joint, ((velocity - yawrate * (h / 2)) / R))
 
     def getObjectPosition(self, object):
         return self.sim.getObjectPosition(object, self.world_frame)
 
     def getObjectOrientation(self, object):
         return self.sim.getObjectOrientation(object, self.world_frame)
-    
+
     def getObjectVelocity(self, object):
         return self.sim.getObjectVelocity(object, self.world_frame)
 
@@ -159,89 +163,78 @@ class RobotControl:
         self.sim.stopSimulation()
         # Restore the original idle loop frequency:
         return self.sim.setInt32Param(self.sim.intparam_idle_fps, self.idle_fps)
-    
+
     def savePath(self):
         with open('foundPath.pkl', 'wb') as f:
             pickle.dump(self.rrt_path(), f)
-      
 
     def run(self):
         print('Program started')
         # start simulation in CoppeliaSim
         self.startSimulation()
-        
-        with open('foundPath.pkl', 'rb') as f:
-            path = np.array(pickle.load(f))[::-1]            
 
-        
+        with open('foundPath.pkl', 'rb') as f:
+            path = pickle.load(f)
+
         for desired_pos in path:
-            remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0])**2 + (desired_pos[1] - self.getObjectPosition(self.robot_object)[1])**2)
+            remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + (
+                        desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
             threshold = 0.01
-            
-            print(f"desired position = {desired_pos}")
-            #pid starting values
+
+            # pid starting values
             dt = 0.05
             I_steer = 0
             prev_error_steer = 0
-            
+
             I_vel = 0
             prev_error_vel = 0
             heading_error_list = []
             t = 0
-            while remaining_length > threshold: 
-                remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0])**2 + (desired_pos[1] - self.getObjectPosition(self.robot_object)[1])**2)
+            while remaining_length > threshold:
+                remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + (
+                            desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
                 current_heading = self.getObjectOrientation(self.robot_object)[1]
                 current_pos = np.array(self.getObjectPosition(self.robot_object))[:2]
-                
+
                 desired_heading = math.atan2(desired_pos[1] - current_pos[1], desired_pos[0] - current_pos[0])
                 heading_error = desired_heading - current_heading
-                
-               
-                #print(f'current_heading is {current_heading}, heading error is {heading_error}')
-                
-                
+
+                # print(f'current_heading is {current_heading}, heading error is {heading_error}')
+
                 # Calculate the control output for the steering angle using a PID controller
-                Kp = 1
+                Kp = 2
                 Ki = 0
-                Kd = 0.01
-                
+                Kd = 0.001
+
                 I_steer += heading_error * dt
                 steering_derivative = (heading_error - prev_error_steer) / dt
                 steering = Kp * heading_error + Ki * I_steer + Kd * steering_derivative
                 prev_error_vel = heading_error
                 print("\n")
-                #print(f"heading error:{heading_error}")
-                
+                print(f"heading error:{heading_error}")
+
                 # Calculate the control output for the velocity using a PID controller
-                Kp = 0.0001
+                Kp = 1
                 Ki = 0
-                Kd = 0.001
-            
+                Kd = 0.01
+
                 I_vel += remaining_length * dt
                 velocity_derivative = (remaining_length - prev_error_vel) / dt
                 velocity = Kp * remaining_length + Ki * I_vel + Kd * velocity_derivative
                 prev_error_vel = remaining_length
-                
-                if np.abs(heading_error)>np.pi/32:
+
+                if np.abs(heading_error) > np.pi / 32:
                     velocity = 0
 
-                #print("velocity is:", velocity ,"steering is ",steering)
-                self.setMovement(velocity,steering)
+                print("velocity is:", velocity, "steering is ", steering)
+                self.setMovement(velocity, steering)
                 self.client.step()
 
-                heading_error_list.append(heading_error)
-
-            
-
-
-            
-            
         self.stopSimulation()
         print('Program ended')
 
 
 if __name__ == '__main__':
-    
     control = RobotControl()
-    control.savePath() #uncomment if you want to search for a new path
+    control.savePath()  # uncomment if you want to search for a new path
     control.run()
