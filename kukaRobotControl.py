@@ -22,7 +22,6 @@ class RobotControl:
         self.idle_fps = self.sim.getInt32Param(self.sim.intparam_idle_fps)
         self.robot_object = self.sim.getObject("/LineTracer")
         self.world_frame = self.sim.handle_world
-
         # get all racks from Coppeliasim scene
         self.racks = []
         i = 0
