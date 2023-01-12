@@ -18,6 +18,7 @@ class PID:
 
         self.steering_path = []
         self.velocity_path = []
+        self.orientation = []
 
 
     def unicycle_model(self,current_pos, omega, velocity, dt):
@@ -98,6 +99,7 @@ class PID:
                 # Update the current position based on the control outputs and the unicycle model dynamics
                 self.steering_path.append(steering)
                 self.velocity_path.append(velocity)
+                self.orientation.append(self.current_pos[2])
                 self.current_pos = self.unicycle_model(self.current_pos, steering, velocity,dt)
                 # Check if the robot has reached the goal
                 threshold = 0.01
