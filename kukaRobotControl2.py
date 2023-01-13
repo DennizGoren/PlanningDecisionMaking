@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jan 12 12:58:03 2023
-
-@author: Badr_
-"""
-
 import time
 from zmqRemoteApi import RemoteAPIClient
 import numpy as np
@@ -26,7 +19,7 @@ class RobotControl:
         self.client.setStepping(True)
         self.sim = self.client.getObject('sim')
         self.idle_fps = self.sim.getInt32Param(self.sim.intparam_idle_fps)
-        self.robot_object = self.sim.getObject("/LineTracer")
+        self.robot_object = self.sim.getObject("/LineTracer/Body")
         self.goal_object = self.sim.getObject("/indoorPlant")
         self.world_frame = self.sim.handle_world
         start_pos = self.getObjectPosition(self.robot_object)
@@ -66,7 +59,7 @@ class RobotControl:
             algo = RRTStar(
                 start=self.start,
                 goal=self.goal,
-                max_iter=600,
+                max_iter=300,
                 rand_area=[-10, 20],
                 obstacle_list=self.get_circle_obstacles(),
                 expand_dis=7,
@@ -118,6 +111,7 @@ class RobotControl:
         robot_scaling_factor = self.sim.getObjectSizeFactor(self.robot_object)
         R = 0.027 * robot_scaling_factor
         h = 0.119 * robot_scaling_factor
+        print("right is",((velocity + yawrate * (h / 2)) / R),"left is",((velocity - yawrate * (h / 2)) / R),)
         self.sim.setJointTargetVelocity(self.right_wheel_joint, ((velocity + yawrate * (h / 2)) / R))
         self.sim.setJointTargetVelocity(self.left_wheel_joint, ((velocity - yawrate * (h / 2)) / R))
 
@@ -125,7 +119,7 @@ class RobotControl:
         return self.sim.getObjectPosition(object, self.world_frame)
 
     def getObjectOrientation(self, object):
-        return self.sim.getObjectOrientation(object, self.world_frame)
+        return self.sim.getObjectOrientation(object, -1)
 
     def getObjectVelocity(self, object):
         return self.sim.getObjectVelocity(object, self.world_frame)
@@ -176,14 +170,11 @@ class RobotControl:
         with open('foundPath.pkl', 'rb') as f:
             path = np.array(pickle.load(f))[::-1]
 
-        for desired_pos in path:
-            print("desired positions: ", desired_pos)
 
         for desired_pos in path:
-
-            print("desired pos: ", desired_pos)
+            # print("desired pos: ", desired_pos)
             remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + (
-                        desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
+                    desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
             threshold = 0.2
 
             # pid starting values
@@ -193,59 +184,54 @@ class RobotControl:
 
             I_vel = 0
             prev_error_vel = 0
-            heading_error_list = []
-            t = 0
-
-            for i in range(20):
-                print("heading:", self.getObjectOrientation(self.robot_object)[2])
-            
 
             while remaining_length > threshold:
                 remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + (
-                            desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
+                        desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
                 current_heading = self.getObjectOrientation(self.robot_object)[2]
-                print("headings: ",self.getObjectOrientation(self.robot_object))
+                print("headings: ", self.getObjectOrientation(self.robot_object))
                 print("current: ", current_heading)
                 current_pos = np.array(self.getObjectPosition(self.robot_object))[:2]
 
+                # desired_heading = math.atan2(desired_pos[1] - current_pos[1], desired_pos[0] - current_pos[0])
                 desired_heading = math.atan2(desired_pos[1] - current_pos[1], desired_pos[0] - current_pos[0])
-                print("desired heading: ",desired_heading)
+                print("desired heading: ", desired_heading)
                 heading_error = desired_heading - current_heading
-
+                heading_error = math.atan2(math.sin(heading_error), math.cos(heading_error))
                 # print(f'current_heading is {current_heading}, heading error is {heading_error}')
 
                 # Calculate the control output for the steering angle using a PID controller
-                Kp = 0.1
+                Kp = 0.7
                 Ki = 0
-                Kd = 0.001
-                
+                Kd = 0.002
+
                 I_steer += heading_error * dt
                 steering_derivative = (heading_error - prev_error_steer) / dt
                 steering = Kp * heading_error + Ki * I_steer + Kd * steering_derivative
                 prev_error_vel = heading_error
                 print("\n")
                 print(f"heading error:{heading_error}")
-
+                steering = math.atan2(math.sin(steering), math.cos(steering))
                 # Calculate the control output for the velocity using a PID controller
-                Kp = 0.4
-                Ki = 0.1
-                Kd = 0.001
-            
+                Kp = 0.1
+                Ki = 0
+                Kd = 0.01
+
                 I_vel += remaining_length * dt
                 velocity_derivative = (remaining_length - prev_error_vel) / dt
                 velocity = Kp * remaining_length + Ki * I_vel + Kd * velocity_derivative
                 prev_error_vel = remaining_length
                 print("heading error is: ", heading_error)
-                if np.abs(heading_error) > np.pi / 16:
-                    velocity = 0
+                if np.abs(heading_error) > np.pi / 32:
+                    velocity = 0.0
                     if remaining_length < threshold:
                         break
-                
-                print("velocity is: ", velocity ,"steering is: ",steering)
 
-                print("desired position = ",desired_pos)
-                print("remaining lenght = ",remaining_length)
-                self.setMovement(velocity,steering)
+                print("velocity is: ", velocity, "steering is: ", steering)
+
+                print("desired position = ", desired_pos)
+                print("remaining lenght = ", remaining_length)
+                self.setMovement(velocity, steering)
                 self.client.step()
 
         self.stopSimulation()
