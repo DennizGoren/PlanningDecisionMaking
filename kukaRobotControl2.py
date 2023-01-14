@@ -59,10 +59,10 @@ class RobotControl:
             algo = RRTStar(
                 start=self.start,
                 goal=self.goal,
-                max_iter=300,
-                rand_area=[-10, 20],
+                max_iter=1000,
+                rand_area=[-15, 15],
                 obstacle_list=self.get_circle_obstacles(),
-                expand_dis=7,
+                expand_dis=8,
                 search_until_max_iter=True,
                 robot_radius=self.robot_radius)
 
@@ -70,14 +70,14 @@ class RobotControl:
             algo = RRT(
                 start=self.start,
                 goal=self.goal,
-                rand_area=[-10, 20],
+                rand_area=[-10, 10],
                 obstacle_list=self.get_circle_obstacles(),
-                play_area=[0, 20, 0, 20],
+                play_area=[-10, 10, -10, 10],
                 robot_radius=self.robot_radius)
         tic = time.perf_counter()
         path = algo.planning(animation=False)  # this path is the reference trajectory for the PID
         toc = time.perf_counter()
-        print(f"Downloaded the tutorial in {toc - tic:0.4f} seconds")
+        print(f"Path found in {toc - tic:0.4f} seconds")
 
         # print(path)
 
@@ -85,23 +85,10 @@ class RobotControl:
             print("Cannot find path")
         else:
             print("found path!!")
-            # Path smoothing
-            # maxIter = 2000
-            # smoothedPath = algo.path_smoothing(path, maxIter, self.get_circle_obstacles())
             algo.draw_graph()
             plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
-            # # plt.plot([x for (x, y) in smoothedPath], [y for (x, y) in smoothedPath], '-c')
             plt.grid(True)
-            #
-            # numpy_path = np.asarray(path, dtype=np.float32)
-            # x, y = zip(*numpy_path)
-            # x = np.r_[x, x[0]]
-            # y = np.r_[y, y[0]]
-            # f, u = interpolate.splprep([x, y], s=0, per=True)
-            # #create interpolated lists of points
-            # xint, yint = interpolate.splev(np.linspace(0, 1, 100), f)
-            # plt.scatter(x, y)
-            # # plt.plot(xint, yint)
+
             # plt.pause(0.0001)  # Need for Mac
             plt.show()
 
@@ -240,5 +227,5 @@ class RobotControl:
 
 if __name__ == '__main__':
     control = RobotControl()
-    # control.savePath() #uncomment if you want to search for a new path
-    control.run()
+    control.savePath() #uncomment if you want to search for a new path
+    #control.run()

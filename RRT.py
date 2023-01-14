@@ -200,9 +200,9 @@ class RRT:
         plt.plot(self.start.x, self.start.y, "xr")
         plt.plot(self.end.x, self.end.y, "xr")
         plt.axis("equal")
-        plt.axis([-5, 25, -15, 25])
+        plt.axis([-20, 20, -25, 25])
         plt.grid(True)
-        plt.pause(0.0001)
+        plt.pause(0.0000001)
 
     @staticmethod
     def plot_circle(x, y, size, color="-b"):  # pragma: no cover
