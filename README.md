@@ -11,13 +11,13 @@
 ### Results
 
 <p float="left">
-  <img src="/Visualisations/4000/path.gif" height="200" />
-  <img src="/Visualisations/scene/top.png" height="200" /> 
+  <img src="/Visualisations/4000/path.gif" height="200" width="auto" />
+  <img src="/Visualisations/scene/top.png" height="200" width="auto"/> 
 </p>
 
 <p float="left">
-  <img src="/Visualisations/4000/path_4000.png" height="200" />
-  <img src="/Visualisations/4000/simulation.gif" height="200" /> 
+  <img src="/Visualisations/4000/path_4000.png" height="200" width="auto" />
+  <img src="/Visualisations/4000/simulation.gif" height="200" width="auto" /> 
 </p>
 
 
