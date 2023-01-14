@@ -9,9 +9,15 @@
 ### Running the software
 
 ### Results
-Solarized dark             |  Solarized Ocean
-:-------------------------:|:-------------------------:
-!![](/Visualisations/4000/path.gif)  |  ![](/Visualisations/scene/top.png)
+
+<p float="left">
+  <img src="/Visualisations/4000/path.gif" height="200" />
+  <img src="/Visualisations/scene/top.png" height="200" /> 
+</p>
+
+<p float="left">
+  <img src="/Visualisations/4000/path_4000.png" height="200" />
+  <img src="/Visualisations/4000/simulation.gif" height="200" /> 
+</p>
 
 
-![](/Visualisations/4000/path_4000.png)![](/Visualisations/4000/simulation.mov)
