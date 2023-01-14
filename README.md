@@ -1,15 +1,16 @@
 # Planning and Decision Making Project
 
- ![Corner view](/Visualisations/scene/corner.png)
 <p float="left">
   <img src="/Visualisations/scene/corner.png" height="400" width="auto" />
   
 </p>
+
 ### Authors
+
 Aden Westmaas (4825373)  
-Badr Essabri (5099412)   
-Denniz Goren (4495543)   
-Renée Schwietert (4551753)  
+Badr Essabri (5099412)     
+Denniz Goren (4495543)    
+Renée Schwietert (4551753)    
 
 ### Requirements
 matplotlib==3.6.2  
