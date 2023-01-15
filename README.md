@@ -52,8 +52,8 @@ tqdm==4.64.1
 On the left we see the RRT* path finding algorithm creating paths for 4000 iterations. The paths are found based on the configuration of the simulation environment on the right. 
 
 <p float="left">
-  <img src="/Visualisations/4000/path_4000.png" height="350" width="400" />
-  <img src="/Visualisations/4000/simulation.gif" height="350" width="350" /> 
+  <img src="/Visualisations/4000/path_4000.png" height="425" width="450" />
+  <img src="/Visualisations/4000/simulation.gif" height="425" width="425" /> 
 </p>
 
 The shortest path that was found by the alogorithm is depicted in red in left image. On the right we see the robot executing this path in the simulation environment. 
