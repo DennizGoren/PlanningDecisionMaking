@@ -2,7 +2,6 @@
 Path planning Sample Code with RRT*
 author: Atsushi Sakai(@Atsushi_twi)
 """
-
 import math
 import random
 import sys
@@ -14,7 +13,6 @@ sys.path.append(str(pathlib.Path(__file__).parent.parent))
 from RRT import RRT
 
 show_animation = True
-
 
 class RRTStar(RRT):
     """

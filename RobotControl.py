@@ -5,14 +5,15 @@ import math
 import matplotlib.pyplot as plt
 from RRT import RRT
 from RRTStar import RRTStar
-from pid_controller import PID
 import time
-from tqdm import tqdm
-from scipy import interpolate
 import pickle
 
-
 class RobotControl:
+    '''
+    Class for the control of the robot in the simulation environment. 
+    '''
+
+    # Initialize the connection with the simulation environment and retrieve all necessary parameters. 
     def __init__(self):
         self.robot_radius = 0.8
         self.client = RemoteAPIClient()
@@ -27,7 +28,7 @@ class RobotControl:
         goal_pos = self.getObjectPosition(self.goal_object)
         self.goal = [goal_pos[0], goal_pos[1]]
 
-        # get all racks from Coppeliasim scene
+        # Retrieve all rack obstacles from the CoppeliaSim scene.
         self.racks = []
         i = 0
         while True:
@@ -37,29 +38,31 @@ class RobotControl:
             except Exception:
                 break
 
-        # initialize wheel joints
+        # Initialize the wheel joints.
         self.left_wheel_joint = self.sim.getObject('./DynamicLeftJoint')
         self.right_wheel_joint = self.sim.getObject('./DynamicRightJoint')
 
+    # Function that converts obstacles into arrays of circles, used by the path algorithms. 
     def get_circle_obstacles(self):
         obstacle_list = []
-        radius = 0.16711
         for i, rack in enumerate(self.racks):
+            radius = 0.16711 * self.sim.getObjectSizeFactor(rack)
             x_rack, y_rack, _ = self.getObjectPosition(rack)
             theta = self.getObjectOrientation(rack)[2]
             y_start = y_rack + 1.055 * np.cos(theta)
-            x_start = x_rack + 1.055 * np.sin(theta)
+            x_start = x_rack - 1.055 * np.sin(theta)
             for i in range(11):
-                obstacle = (x_start - 0.211 * np.sin(theta) * i, (y_start - 0.211 * np.cos(theta) * i), radius)
+                obstacle = (x_start + 0.211 * np.sin(theta) * i, (y_start - 0.211 * np.cos(theta) * i), radius)
                 obstacle_list.append(obstacle)
         return obstacle_list
 
-    def rrt_path(self, RRT_star=True):
+    # Path finding algorithms. 
+    def rrt_path(self, RRT_star=False):
         if RRT_star:
             algo = RRTStar(
                 start=self.start,
                 goal=self.goal,
-                max_iter=1000,
+                max_iter=1500,
                 rand_area=[-15, 15],
                 obstacle_list=self.get_circle_obstacles(),
                 expand_dis=8,
@@ -70,35 +73,36 @@ class RobotControl:
             algo = RRT(
                 start=self.start,
                 goal=self.goal,
-                rand_area=[-10, 10],
+                max_iter=4000,
+                rand_area=[-15, 15],
                 obstacle_list=self.get_circle_obstacles(),
-                play_area=[-10, 10, -10, 10],
+                play_area=[-15, 15, -15, 15],
                 robot_radius=self.robot_radius)
+        
+        # Display the time it takes the algorithm to find a path. 
         tic = time.perf_counter()
-        path = algo.planning(animation=False)  # this path is the reference trajectory for the PID
+        # Set animation to True if a live animation is wanted. 
+        path = algo.planning(animation=False)  
         toc = time.perf_counter()
         print(f"Path found in {toc - tic:0.4f} seconds")
 
-        # print(path)
-
         if path is None:
-            print("Cannot find path")
+            print("Couldn't find path")
         else:
-            print("found path!!")
+            print("Found path!!")
             algo.draw_graph()
             plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
             plt.grid(True)
-
-            # plt.pause(0.0001)  # Need for Mac
             plt.show()
 
         return path
 
+    # Convert and set the velocity for the wheels of the robot. 
     def setMovement(self, velocity, yawrate):
         robot_scaling_factor = self.sim.getObjectSizeFactor(self.robot_object)
         R = 0.027 * robot_scaling_factor
         h = 0.119 * robot_scaling_factor
-        print("right is",((velocity + yawrate * (h / 2)) / R),"left is",((velocity - yawrate * (h / 2)) / R),)
+        
         self.sim.setJointTargetVelocity(self.right_wheel_joint, ((velocity + yawrate * (h / 2)) / R))
         self.sim.setJointTargetVelocity(self.left_wheel_joint, ((velocity - yawrate * (h / 2)) / R))
 
@@ -145,47 +149,44 @@ class RobotControl:
         # Restore the original idle loop frequency:
         return self.sim.setInt32Param(self.sim.intparam_idle_fps, self.idle_fps)
 
+    # Save the path as a pickle file so it can be used multiple times. 
     def savePath(self):
         with open('foundPath.pkl', 'wb') as f:
             pickle.dump(self.rrt_path(), f)
 
     def run(self):
         print('Program started')
-        # start simulation in CoppeliaSim
+        # Start simulation in CoppeliaSim.
         self.startSimulation()
 
         with open('foundPath.pkl', 'rb') as f:
             path = np.array(pickle.load(f))[::-1]
 
-
+        # PID control loop.
         for desired_pos in path:
-            remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + (
-                    desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
+            remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + 
+            (desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
             threshold = 0.2
 
-            # pid starting values
+            # PID starting values.
             dt = 0.05
             I_steer = 0
             prev_error_steer = 0
-
             I_vel = 0
             prev_error_vel = 0
 
             while remaining_length > threshold:
-                remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + (
-                        desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
+                # Distance left between the robot and it's desired position.
+                remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + 
+                                    (desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
+                # Retrieve current information from the simulation environment.
                 current_heading = self.getObjectOrientation(self.robot_object)[2]
-                print("headings: ", self.getObjectOrientation(self.robot_object))
-                print("current: ", current_heading)
                 current_pos = np.array(self.getObjectPosition(self.robot_object))[:2]
-
-                # desired_heading = math.atan2(desired_pos[1] - current_pos[1], desired_pos[0] - current_pos[0])
+                # Calculate the desired heading and the heading error. 
                 desired_heading = math.atan2(desired_pos[1] - current_pos[1], desired_pos[0] - current_pos[0])
-                print("desired heading: ", desired_heading)
                 heading_error = desired_heading - current_heading
                 heading_error = math.atan2(math.sin(heading_error), math.cos(heading_error))
-                # print(f'current_heading is {current_heading}, heading error is {heading_error}')
-
+                
                 # Calculate the control output for the steering angle using a PID controller
                 Kp = 0.7
                 Ki = 0
@@ -195,9 +196,8 @@ class RobotControl:
                 steering_derivative = (heading_error - prev_error_steer) / dt
                 steering = Kp * heading_error + Ki * I_steer + Kd * steering_derivative
                 prev_error_vel = heading_error
-                print("\n")
-                print(f"heading error:{heading_error}")
                 steering = math.atan2(math.sin(steering), math.cos(steering))
+
                 # Calculate the control output for the velocity using a PID controller
                 Kp = 0.1
                 Ki = 0
@@ -207,16 +207,12 @@ class RobotControl:
                 velocity_derivative = (remaining_length - prev_error_vel) / dt
                 velocity = Kp * remaining_length + Ki * I_vel + Kd * velocity_derivative
                 prev_error_vel = remaining_length
-                print("heading error is: ", heading_error)
+                
+                # Make the robot stops until it's heading error is small enough. 
                 if np.abs(heading_error) > np.pi / 32:
                     velocity = 0.0
-                    if remaining_length < threshold:
-                        break
 
-                print("velocity is: ", velocity, "steering is: ", steering)
-
-                print("desired position = ", desired_pos)
-                print("remaining lenght = ", remaining_length)
+                # Send the required velocity and steering input to the robot. 
                 self.setMovement(velocity, steering)
                 self.client.step()
 
@@ -226,5 +222,6 @@ class RobotControl:
 
 if __name__ == '__main__':
     control = RobotControl()
-    #control.savePath() #uncomment if you want to search for a new path
-    control.run()
+    # Uncomment the following line if you want to search for a new path.
+    control.savePath() 
+    # control.run()

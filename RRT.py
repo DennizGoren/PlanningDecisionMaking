@@ -1,20 +1,13 @@
 """
-
 Path planning Sample Code with Randomized Rapidly-Exploring Random Trees (RRT)
-
 author: AtsushiSakai(@Atsushi_twi)
-
 """
-
 import math
 import random
-import time
-
 import matplotlib.pyplot as plt
 import numpy as np
 
 show_animation = True
-
 
 class RRT:
     """
@@ -290,6 +283,3 @@ def main(gx=6.0, gy=10.0):
 
 if __name__ == '__main__':
     main()
-
-
-
