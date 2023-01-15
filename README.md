@@ -65,7 +65,7 @@ The shortest path that was found by the algorithm is depicted in red in left ima
 ### RRT vs RRT*
 <p float="left">
   <img src="visualisations/4000/RRT_4000.png" height="350" width="400" />
-  <img src="visualisations/4000/RRT_star_1500.png" height="350" width="400" /> 
+  <img src="visualisations/4000/RRT_Star_1500.png" height="350" width="400" /> 
 </p>
 On the left we see the results of RRT on the same configurations as above. The result is clearly inferior to the results produced by the RRT* algorithm. The right image depicts the results of the RRT* algorithm on a different configuration of obstacles and goal. This result was produced with 1500 iterations.  
 
