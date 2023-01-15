@@ -223,5 +223,5 @@ class RobotControl:
 if __name__ == '__main__':
     control = RobotControl()
     # Uncomment the following line if you want to search for a new path.
-    control.savePath() 
-    # control.run()
+    # control.savePath() 
+    control.run()

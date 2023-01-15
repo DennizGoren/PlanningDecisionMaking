@@ -280,6 +280,5 @@ def main(gx=6.0, gy=10.0):
         plt.pause(0.0001)  # Need for Mac
         plt.show()
 
-
 if __name__ == '__main__':
     main()
