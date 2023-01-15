@@ -5,6 +5,8 @@
   
 </p>
 
+This repository contains the code and the visualisations for the project of the Planning and Decision Making course (RO47005) of the Master Robotics at the TU Delft. The aim of this project is to use path finding algorithms to find collision free paths for a robot in a simulation environment to follow. During this project, RRT and RRT* algorithms were used for the path finding. The path was than followed by a non-holonomic differential drive mobile robot with the use of a PID controller. 
+
 ## Authors
 
 Aden Westmaas (4825373)  
@@ -47,10 +49,14 @@ tqdm==4.64.1
   <img src="/Visualisations/scene/top.png" height="350" width="350"/> 
 </p>
 
+On the left we see the RRT* path finding algorithm creating paths for 4000 iterations. The paths are found based on the configuration of the simulation environment on the right. 
+
 <p float="left">
   <img src="/Visualisations/4000/path_4000.png" height="350" width="400" />
   <img src="/Visualisations/4000/simulation.gif" height="350" width="350" /> 
 </p>
+
+The shortest path that was found by the alogorithm is depicted in red in left image. On the right we see the robot executing this path in the simulation environment. 
 
 ## Acknowledgments
 
