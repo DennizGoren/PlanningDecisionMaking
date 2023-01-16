@@ -162,17 +162,15 @@ class RobotControl:
         with open('foundPath.pkl', 'rb') as f:
             path = np.array(pickle.load(f))[::-1]
 
-        # PID control loop.
+        # PD control loop.
         for desired_pos in path:
             remaining_length = math.sqrt((desired_pos[0] - self.getObjectPosition(self.robot_object)[0]) ** 2 + 
             (desired_pos[1] - self.getObjectPosition(self.robot_object)[1]) ** 2)
             threshold = 0.2
 
-            # PID starting values.
+            # PD starting values.
             dt = 0.05
-            I_steer = 0
             prev_error_steer = 0
-            I_vel = 0
             prev_error_vel = 0
 
             while remaining_length > threshold:
@@ -187,25 +185,22 @@ class RobotControl:
                 heading_error = desired_heading - current_heading
                 heading_error = math.atan2(math.sin(heading_error), math.cos(heading_error))
                 
-                # Calculate the control output for the steering angle using a PID controller
+                # Calculate the control output for the steering angle using a PD controller
                 Kp = 0.7
-                Ki = 0
                 Kd = 0.002
 
-                I_steer += heading_error * dt
                 steering_derivative = (heading_error - prev_error_steer) / dt
-                steering = Kp * heading_error + Ki * I_steer + Kd * steering_derivative
+                steering = Kp * heading_error + Kd * steering_derivative
                 prev_error_vel = heading_error
                 steering = math.atan2(math.sin(steering), math.cos(steering))
 
-                # Calculate the control output for the velocity using a PID controller
+                # Calculate the control output for the velocity using a PD controller
                 Kp = 0.1
-                Ki = 0
                 Kd = 0.01
 
-                I_vel += remaining_length * dt
                 velocity_derivative = (remaining_length - prev_error_vel) / dt
-                velocity = Kp * remaining_length + Ki * I_vel + Kd * velocity_derivative
+                velocity = Kp * remaining_length + Kd * velocity_derivative
+                # velocity = velocity * (np.pi - abs(heading_error))/np.pi
                 prev_error_vel = remaining_length
                 
                 # Make the robot stops until it's heading error is small enough. 
