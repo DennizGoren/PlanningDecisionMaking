@@ -195,17 +195,21 @@ class RobotControl:
                 steering = math.atan2(math.sin(steering), math.cos(steering))
 
                 # Calculate the control output for the velocity using a PD controller
-                Kp = 0.1
-                Kd = 0.01
+                # Kp = 0.1
+                # Kd = 0.01
+                #
+                # velocity_derivative = (remaining_length - prev_error_vel) / dt
+                # velocity = Kp * remaining_length + Kd * velocity_derivative
+                # # velocity = velocity * (np.pi - abs(heading_error))/np.pi
+                # prev_error_vel = remaining_length
 
-                velocity_derivative = (remaining_length - prev_error_vel) / dt
-                velocity = Kp * remaining_length + Kd * velocity_derivative
-                # velocity = velocity * (np.pi - abs(heading_error))/np.pi
-                prev_error_vel = remaining_length
-                
-                # Make the robot stops until it's heading error is small enough. 
-                if np.abs(heading_error) > np.pi / 32:
+                velocity = 1.0
+                if current_pos == self.goal:
                     velocity = 0.0
+                
+                # # Make the robot stops until it's heading error is small enough.
+                # if np.abs(heading_error) > np.pi / 32:
+                #     velocity = 0.0
 
                 # Send the required velocity and steering input to the robot. 
                 self.setMovement(velocity, steering)
